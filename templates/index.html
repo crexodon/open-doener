@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knockout.js Example</title>
+</head>
+<body>
+    <h1>Enter Item Details</h1>
+    <div>
+        <label for="name">Name:</label>
+        <input type="text" id="name" data-bind="value: itemName">
+    </div>
+    <div>
+        <label for="price">Price:</label>
+        <input type="number" id="price" data-bind="value: itemPrice">
+    </div>
+    <div>
+        <label for="location">Location:</label>
+        <input type="text" id="location" data-bind="value: itemLocation">
+    </div>
+    <button data-bind="click: saveData">Save Data</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.2/knockout-min.js"></script>
+    <script>
+        function AppViewModel() {
+            var self = this;
+
+            self.itemName = ko.observable("");
+            self.itemPrice = ko.observable("");
+            self.itemLocation = ko.observable("");
+
+            self.saveData = function () {
+                var data = {
+                    name: self.itemName(),
+                    price: parseFloat(self.itemPrice()),
+                    location: self.itemLocation()
+                };
+
+                fetch('/save_data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Data saved successfully!');
+                        self.itemName("");
+                        self.itemPrice("");
+                        self.itemLocation("");
+                    } else {
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            };
+        }
+
+        ko.applyBindings(new AppViewModel());
+    </script>
+</body>
+</html>
