@@ -51,3 +51,5 @@ share/
 lib64
 
 pyvenv.cfg
+
+price_heatmap.html
