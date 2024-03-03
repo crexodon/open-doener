@@ -1,28 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Knockout.js Example</title>
+    <title>Open-Döner.de</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+    <script src="https://github.com/knockout/knockout/releases/download/v3.5.1/knockout-3.5.1.js"></script>
 </head>
 <body>
-    <h1>Enter Item Details</h1>
+    <h1>Open-Döner.de</h1>
+    <p>Open-Döner.de ist ein Open-Data Projekt um die Preise und Orte von Döner- und ähnlichen Grillrestaurants zu sammeln.</p>
     <div>
-        <label for="name">Name:</label>
+        <label for="name">Restaurant:</label>
         <input type="text" id="name" data-bind="value: itemName">
     </div>
     <div>
-        <label for="price">Price:</label>
+        <label for="price">Preis:</label>
         <input type="number" id="price" data-bind="value: itemPrice">
     </div>
     <div>
-        <label for="location">Location:</label>
-        <input type="text" id="location" data-bind="value: itemLocation">
+        <label for="location">Ort:</label>
+        <!-- Map Container -->
+        <div id="map" style="height: 300px;"></div>
+        <input type="hidden" id="location" data-bind="value: itemLocation">
     </div>
-    <button data-bind="click: saveData">Save Data</button>
+    <button data-bind="click: saveData">Absenden</button>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.5.2/knockout-min.js"></script>
+    
     <script>
         function AppViewModel() {
             var self = this;
@@ -31,12 +43,35 @@
             self.itemPrice = ko.observable("");
             self.itemLocation = ko.observable("");
 
+            // Initialize Leaflet map
+            var map = L.map('map').setView([49.143781540331545, 9.214975833892824], 12);  // Default view
+
+            // Use OpenStreetMap tiles
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+             // Add a marker to the map
+             var marker = L.marker([0, 0]).addTo(map);
+
+            // Update itemLocation when the map is clicked
+            map.on('click', function(event) {
+                var clickedLatLng = event.latlng;
+                marker.setLatLng(clickedLatLng);
+
+                var currLocation = {"latitude":clickedLatLng.lat, "longitude":clickedLatLng.lng};
+                self.itemLocation = JSON.stringify(currLocation);
+            });
+
             self.saveData = function () {
                 var data = {
                     name: self.itemName(),
                     price: parseFloat(self.itemPrice()),
-                    location: self.itemLocation()
+                    location: self.itemLocation
                 };
+
+                console.log(data);
 
                 fetch('/save_data', {
                     method: 'POST',
@@ -48,10 +83,11 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        
                         alert('Data saved successfully!');
-                        self.itemName("");
-                        self.itemPrice("");
-                        self.itemLocation("");
+                        //self.itemName("");
+                        //self.itemPrice("");
+                        //self.itemLocation("");
                     } else {
                         alert('Error: ' + data.error);
                     }
